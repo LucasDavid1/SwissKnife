@@ -1,26 +1,32 @@
 import SwiftUI
 
 enum Tool: String, CaseIterable, Identifiable {
-    case bgRemover = "BG Remover"
-    case worldClocks = "World Clocks"
+    case bgRemover       = "BG Remover"
+    case worldClocks     = "World Clocks"
+    case clipboardHistory = "Clipboard History"
+    case ocr             = "Screenshot to Text"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .bgRemover: return "scissors"
-        case .worldClocks: return "clock"
+        case .bgRemover:        return "scissors"
+        case .worldClocks:      return "clock"
+        case .clipboardHistory: return "clipboard"
+        case .ocr:              return "text.viewfinder"
         }
     }
 
     var popoverSize: NSSize {
         switch self {
-        case .bgRemover: return NSSize(width: 400, height: 460)
-        case .worldClocks: return NSSize(width: 450, height: 400)
+        case .bgRemover:        return NSSize(width: 400, height: 460)
+        case .worldClocks:      return NSSize(width: 450, height: 400)
+        case .clipboardHistory: return NSSize(width: 360, height: 420)
+        case .ocr:              return NSSize(width: 400, height: 420)
         }
     }
 
-    static var homeSize: NSSize { NSSize(width: 340, height: 300) }
+    static var homeSize: NSSize { NSSize(width: 340, height: 420) }
 }
 
 struct MainView: View {
@@ -64,23 +70,24 @@ struct MainView: View {
             .padding(.bottom, 4)
 
             // Tools
-            VStack(spacing: 12) {
-                ForEach(filteredTools) { tool in
-                    ToolCard(tool: tool) {
-                        activeTool = tool
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 12) {
+                    ForEach(filteredTools) { tool in
+                        ToolCard(tool: tool) {
+                            activeTool = tool
+                        }
+                    }
+
+                    if filteredTools.isEmpty {
+                        Text("No tools found")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .frame(height: 80)
                     }
                 }
-
-                if filteredTools.isEmpty {
-                    Text("No tools found")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                        .frame(height: 80)
-                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 16)
-
-            Spacer(minLength: 0)
 
             HStack {
                 Spacer()
@@ -131,6 +138,10 @@ struct MainView: View {
             case .worldClocks:
                 WorldClocksView()
                 Spacer(minLength: 0)
+            case .clipboardHistory:
+                ClipboardHistoryView()
+            case .ocr:
+                OCRView()
             }
         }
         .frame(width: tool.popoverSize.width, height: tool.popoverSize.height, alignment: .top)
@@ -268,6 +279,10 @@ struct ToolCard: View {
             WorldClocksPreview()
         case .bgRemover:
             BGRemoverPreview()
+        case .clipboardHistory:
+            ClipboardHistoryPreview()
+        case .ocr:
+            OCRPreview()
         }
     }
 }

@@ -14,6 +14,7 @@ struct SwissKnifeApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var popover: NSPopover!
+    let clipboardStore = ClipboardStore()  // lives for the entire app lifetime
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -48,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = Tool.homeSize
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: MainView(popover: popover))
+        popover.contentViewController = NSHostingController(rootView: MainView(popover: popover).environmentObject(clipboardStore))
     }
 
     @objc func togglePopover() {

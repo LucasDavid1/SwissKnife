@@ -7,16 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000010000000000000001 /* BGRemoverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000001; };
-		A10000010000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000002; };
+		A10000010000000000000001 /* SwissKnifeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000001; };
+		A10000010000000000000002 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000002; };
 		A10000010000000000000003 /* BGRemoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000003; };
+		A10000010000000000000004 /* BGRemoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000004; };
+		A10000010000000000000005 /* WorldClocksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000005; };
+		A10000010000000000000006 /* swiss_knife_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A10000020000000000000001 /* BGRemoverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGRemoverApp.swift; sourceTree = "<group>"; };
-		A10000020000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A10000020000000000000001 /* SwissKnifeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissKnifeApp.swift; sourceTree = "<group>"; };
+		A10000020000000000000002 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		A10000020000000000000003 /* BGRemoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGRemoverViewModel.swift; sourceTree = "<group>"; };
-		A10000030000000000000001 /* BGRemover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BGRemover.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000020000000000000004 /* BGRemoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BGRemoverView.swift; sourceTree = "<group>"; };
+		A10000020000000000000005 /* WorldClocksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldClocksView.swift; sourceTree = "<group>"; };
+		A10000020000000000000006 /* swiss_knife_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = swiss_knife_icon.png; sourceTree = "<group>"; };
+		A10000030000000000000001 /* SwissKnife.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwissKnife.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,25 +39,28 @@
 		A10000050000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				A10000050000000000000002 /* BGRemover */,
+				A10000050000000000000002 /* SwissKnife */,
 				A10000050000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A10000050000000000000002 /* BGRemover */ = {
+		A10000050000000000000002 /* SwissKnife */ = {
 			isa = PBXGroup;
 			children = (
-				A10000020000000000000001 /* BGRemoverApp.swift */,
-				A10000020000000000000002 /* ContentView.swift */,
+				A10000020000000000000001 /* SwissKnifeApp.swift */,
+				A10000020000000000000002 /* MainView.swift */,
+				A10000020000000000000004 /* BGRemoverView.swift */,
 				A10000020000000000000003 /* BGRemoverViewModel.swift */,
+				A10000020000000000000005 /* WorldClocksView.swift */,
+				A10000020000000000000006 /* swiss_knife_icon.png */,
 			);
-			path = BGRemover;
+			path = SwissKnife;
 			sourceTree = "<group>";
 		};
 		A10000050000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A10000030000000000000001 /* BGRemover.app */,
+				A10000030000000000000001 /* SwissKnife.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -59,19 +68,20 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000060000000000000001 /* BGRemover */ = {
+		A10000060000000000000001 /* SwissKnife */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A10000080000000000000001;
 			buildPhases = (
 				A10000070000000000000001 /* Sources */,
 				A10000040000000000000001 /* Frameworks */,
+				A1000000C000000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = BGRemover;
-			productName = BGRemover;
+			name = SwissKnife;
+			productName = SwissKnife;
 			productReference = A10000030000000000000001;
 			productType = "com.apple.product-type.application";
 		};
@@ -98,19 +108,32 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A10000060000000000000001 /* BGRemover */,
+				A10000060000000000000001 /* SwissKnife */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1000000C000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000006 /* swiss_knife_icon.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A10000070000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000010000000000000001 /* BGRemoverApp.swift in Sources */,
-				A10000010000000000000002 /* ContentView.swift in Sources */,
+				A10000010000000000000001 /* SwissKnifeApp.swift in Sources */,
+				A10000010000000000000002 /* MainView.swift in Sources */,
 				A10000010000000000000003 /* BGRemoverViewModel.swift in Sources */,
+				A10000010000000000000004 /* BGRemoverView.swift in Sources */,
+				A10000010000000000000005 /* WorldClocksView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,7 +185,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Damascuss Factory";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -170,7 +193,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.damascuss.BGRemover";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.damascuss.SwissKnife";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -186,7 +209,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Damascuss Factory";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -194,7 +217,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.damascuss.BGRemover";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.damascuss.SwissKnife";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -204,7 +227,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A10000080000000000000001 /* Build configuration list for PBXNativeTarget "BGRemover" */ = {
+		A10000080000000000000001 /* Build configuration list for PBXNativeTarget "SwissKnife" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1000000B000000000000001 /* Debug */,
@@ -213,7 +236,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A10000080000000000000002 /* Build configuration list for PBXProject "BGRemover" */ = {
+		A10000080000000000000002 /* Build configuration list for PBXProject "SwissKnife" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1000000A000000000000001 /* Debug */,

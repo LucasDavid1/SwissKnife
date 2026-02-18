@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             if let iconPath = Bundle.main.path(forResource: "swiss_knife_icon", ofType: "png"),
                let original = NSImage(contentsOfFile: iconPath) {
-                let size: CGFloat = 22
+                let size: CGFloat = 28
                 let angle: CGFloat = -15
                 let rad = angle * .pi / 180
                 let newSize = NSSize(width: size, height: size)

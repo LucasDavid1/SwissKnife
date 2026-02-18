@@ -146,7 +146,7 @@ struct WorldClocksView: View {
                 }
                 .padding(.horizontal, 30)
             }
-            .padding(.vertical, 30)
+            .padding(.vertical, 16)
             .onReceive(timer) { _ in
                 currentTime = Date()
             }
@@ -268,7 +268,9 @@ struct WorldClocksView: View {
 
             VStack(spacing: 12) {
                 Button(action: {
-                    showConverter.toggle()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showConverter.toggle()
+                    }
                 }) {
                     HStack {
                         Image(systemName: "clock.arrow.2.circlepath")
@@ -323,6 +325,7 @@ struct WorldClocksView: View {
                         }
                     }
                     .padding(.horizontal, 20)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
             .padding(.bottom, 12)

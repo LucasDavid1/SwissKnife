@@ -17,7 +17,6 @@ struct BGRemoverView: View {
 
             Divider()
 
-            // Footer
             HStack {
                 if viewModel.originalImage != nil {
                     Button(action: { viewModel.reset() }) {
@@ -53,7 +52,6 @@ struct BGRemoverView: View {
     var dropZoneView: some View {
         VStack(spacing: 16) {
             Spacer()
-
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
                     .strokeBorder(
@@ -69,26 +67,18 @@ struct BGRemoverView: View {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40, weight: .light))
                         .foregroundColor(.secondary)
-
                     Text("Paste or Drop Image")
                         .font(.system(size: 15, weight: .medium))
-
                     Text("⌘V to paste from clipboard")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
-
                     HStack(spacing: 8) {
-                        Button("Paste Clipboard") {
-                            viewModel.pasteFromClipboard()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-
-                        Button("Choose File…") {
-                            viewModel.openFilePicker()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        Button("Paste Clipboard") { viewModel.pasteFromClipboard() }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        Button("Choose File…") { viewModel.openFilePicker() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
                     }
                     .padding(.top, 4)
                 }
@@ -98,26 +88,59 @@ struct BGRemoverView: View {
                 viewModel.handleDrop(providers: providers)
                 return true
             }
-
             Spacer()
         }
     }
 
     // MARK: - Result View
     var resultView: some View {
-        VStack(spacing: 12) {
-            if viewModel.resultImage != nil {
-                Picker("", selection: $viewModel.showOriginal) {
-                    Text("Original").tag(true)
-                    Text("No Background").tag(false)
+        VStack(spacing: 8) {
+
+            // Method picker + original/result toggle
+            HStack(spacing: 8) {
+                Picker("", selection: $viewModel.selectedMethod) {
+                    ForEach(BGMethod.allCases, id: \.self) { m in
+                        Text(m.rawValue).tag(m)
+                    }
                 }
                 .pickerStyle(.segmented)
+                .onChange(of: viewModel.selectedMethod) { _ in
+                    viewModel.reprocess()
+                }
+
+                Divider().frame(height: 20)
+
+                Picker("", selection: $viewModel.showOriginal) {
+                    Text("Original").tag(true)
+                    Text("Result").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 140)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            // Tolerance slider — only for Color mode
+            if viewModel.selectedMethod == .threshold {
+                HStack(spacing: 8) {
+                    Text("Tolerance")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    Slider(value: $viewModel.tolerance, in: 0...100, step: 1)
+                        .onChange(of: viewModel.tolerance) { _ in
+                            viewModel.reprocess()
+                        }
+                    Text("\(Int(viewModel.tolerance))")
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundColor(.secondary)
+                        .frame(width: 24, alignment: .trailing)
+                }
                 .padding(.horizontal, 16)
-                .padding(.top, 12)
             }
 
+            // Image preview
             ZStack {
-                if !viewModel.showOriginal && viewModel.resultImage != nil {
+                if !viewModel.showOriginal {
                     CheckerboardView()
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -136,21 +159,20 @@ struct BGRemoverView: View {
 
                 if viewModel.isProcessing {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: 8).fill(.ultraThinMaterial)
                         VStack(spacing: 8) {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Removing background…")
+                            ProgressView().scaleEffect(0.8)
+                            Text("Processing…")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
             }
-            .frame(maxHeight: 260)
+            .frame(maxHeight: 230)
             .padding(.horizontal, 16)
 
+            // Copy / Save
             if viewModel.resultImage != nil {
                 HStack(spacing: 8) {
                     Button(action: { viewModel.copyResultToClipboard() }) {
@@ -178,7 +200,7 @@ struct BGRemoverView: View {
     }
 }
 
-// MARK: - Checkerboard (transparency indicator)
+// MARK: - Checkerboard
 struct CheckerboardView: View {
     let size: CGFloat = 10
 
@@ -186,7 +208,6 @@ struct CheckerboardView: View {
         Canvas { context, canvasSize in
             let rows = Int(canvasSize.height / size) + 1
             let cols = Int(canvasSize.width / size) + 1
-
             for row in 0..<rows {
                 for col in 0..<cols {
                     let isLight = (row + col) % 2 == 0

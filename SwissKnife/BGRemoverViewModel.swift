@@ -4,15 +4,26 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import UniformTypeIdentifiers
 
+enum BGMethod: String, CaseIterable {
+    case threshold = "Color"
+    case vision    = "Vision AI"
+}
+
 class BGRemoverViewModel: ObservableObject {
     @Published var originalImage: NSImage?
     @Published var resultImage: NSImage?
     @Published var isProcessing = false
     @Published var showOriginal = true
     @Published var errorMessage: String?
-    
+
+    // Threshold controls (only used in .threshold mode)
+    @Published var tolerance: Double = 30          // 0–100
+    @Published var selectedMethod: BGMethod = .threshold
+
     private let ciContext = CIContext()
-    
+    private var originalCGImage: CGImage?
+    private var originalNSSize: NSSize = .zero
+
     // MARK: - Reset
     func reset() {
         originalImage = nil
@@ -20,237 +31,218 @@ class BGRemoverViewModel: ObservableObject {
         isProcessing = false
         showOriginal = true
         errorMessage = nil
+        originalCGImage = nil
     }
-    
-    // MARK: - Paste from Clipboard
+
+    // MARK: - Input
     func pasteFromClipboard() {
         let pasteboard = NSPasteboard.general
-        
-        // Try to get image data from pasteboard
-        if let image = NSImage(pasteboard: pasteboard) {
-            processImage(image)
-            return
-        }
-        
-        // Try file URLs
+        if let image = NSImage(pasteboard: pasteboard) { processImage(image); return }
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
             .urlReadingContentsConformToTypes: [UTType.image.identifier]
-        ]) as? [URL], let url = urls.first {
-            if let image = NSImage(contentsOf: url) {
-                processImage(image)
-                return
-            }
+        ]) as? [URL], let url = urls.first, let image = NSImage(contentsOf: url) {
+            processImage(image); return
         }
-        
         errorMessage = "No image found in clipboard"
     }
-    
-    // MARK: - File Picker
+
     func openFilePicker() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.image, .png, .jpeg, .heic, .webP, .tiff]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        
-        if panel.runModal() == .OK, let url = panel.url {
-            if let image = NSImage(contentsOf: url) {
-                processImage(image)
-            }
+        if panel.runModal() == .OK, let url = panel.url, let image = NSImage(contentsOf: url) {
+            processImage(image)
         }
     }
-    
-    // MARK: - Handle Drop
+
     func handleDrop(providers: [NSItemProvider]) {
         guard let provider = providers.first else { return }
-        
         if provider.canLoadObject(ofClass: NSImage.self) {
-            provider.loadObject(ofClass: NSImage.self) { [weak self] item, error in
+            provider.loadObject(ofClass: NSImage.self) { [weak self] item, _ in
                 if let image = item as? NSImage {
-                    DispatchQueue.main.async {
-                        self?.processImage(image)
-                    }
+                    DispatchQueue.main.async { self?.processImage(image) }
                 }
             }
         }
     }
-    
-    // MARK: - Process Image (Remove Background)
+
+    // MARK: - Process
     func processImage(_ image: NSImage) {
         originalImage = image
         resultImage = nil
         errorMessage = nil
         showOriginal = true
         isProcessing = true
-        
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.removeBackground(from: image)
-        }
-    }
-    
-    private func removeBackground(from image: NSImage) {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to process image"
-                self.isProcessing = false
-            }
+
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            errorMessage = "Failed to read image"
+            isProcessing = false
             return
         }
-        
-        // Use VNGenerateForegroundInstanceMaskRequest (macOS 14.0+)
-        if #available(macOS 14.0, *) {
-            removeBackgroundWithVision(cgImage: cgImage, originalSize: image.size)
-        } else {
-            // Fallback for older macOS: use subject lifting via saliency
-            removeBackgroundFallback(cgImage: cgImage, originalSize: image.size)
-        }
-    }
-    
-    @available(macOS 14.0, *)
-    private func removeBackgroundWithVision(cgImage: CGImage, originalSize: NSSize) {
-        let request = VNGenerateForegroundInstanceMaskRequest()
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        
-        do {
-            try handler.perform([request])
-            
-            guard let result = request.results?.first else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "No foreground subject detected"
-                    self.isProcessing = false
-                }
-                return
-            }
-            
-            // Generate mask for all instances
-            let allInstances = result.allInstances
-            let maskPixelBuffer = try result.generateScaledMaskForImage(forInstances: allInstances, from: handler)
-            
-            let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-            let originalCIImage = CIImage(cgImage: cgImage)
-            
-            // Apply mask: use the mask as alpha channel
-            let filter = CIFilter.blendWithMask()
-            filter.inputImage = originalCIImage
-            filter.backgroundImage = CIImage.empty()
-            filter.maskImage = maskCIImage
-            
-            guard let outputCIImage = filter.outputImage else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to apply mask"
-                    self.isProcessing = false
-                }
-                return
-            }
-            
-            // Render to CGImage
-            guard let outputCGImage = ciContext.createCGImage(outputCIImage, from: originalCIImage.extent) else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to render result"
-                    self.isProcessing = false
-                }
-                return
-            }
-            
-            let nsImage = NSImage(cgImage: outputCGImage, size: originalSize)
-            
-            DispatchQueue.main.async {
-                self.resultImage = nsImage
-                self.showOriginal = false
-                self.isProcessing = false
-            }
-            
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Vision error: \(error.localizedDescription)"
-                self.isProcessing = false
-            }
-        }
-    }
-    
-    // Fallback for macOS < 14
-    private func removeBackgroundFallback(cgImage: CGImage, originalSize: NSSize) {
-        let request = VNGenerateAttentionBasedSaliencyImageRequest()
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        
-        do {
-            try handler.perform([request])
-            
-            guard let result = request.results?.first else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Could not generate mask (requires macOS 14+ for best results)"
-                    self.isProcessing = false
-                }
-                return
-            }
+        originalCGImage = cg
+        originalNSSize = image.size
 
-            let maskCIImage = CIImage(cvPixelBuffer: result.pixelBuffer)
-            let originalCIImage = CIImage(cgImage: cgImage)
-            
-            // Scale mask to original image size
-            let scaleX = originalCIImage.extent.width / maskCIImage.extent.width
-            let scaleY = originalCIImage.extent.height / maskCIImage.extent.height
-            let scaledMask = maskCIImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-            
-            let filter = CIFilter.blendWithMask()
-            filter.inputImage = originalCIImage
-            filter.backgroundImage = CIImage.empty()
-            filter.maskImage = scaledMask
-            
-            guard let output = filter.outputImage,
-                  let outputCG = ciContext.createCGImage(output, from: originalCIImage.extent) else {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.runRemoval()
+        }
+    }
+
+    /// Re-run removal with current settings (called when slider changes)
+    func reprocess() {
+        guard originalCGImage != nil else { return }
+        isProcessing = true
+        resultImage = nil
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.runRemoval()
+        }
+    }
+
+    private func runRemoval() {
+        switch selectedMethod {
+        case .threshold: removeByThreshold()
+        case .vision:    removeByVision()
+        }
+    }
+
+    // MARK: - Color Threshold
+    // Removes pixels whose luminance/color is close to the corner-sampled background color.
+    private func removeByThreshold() {
+        guard let cgImage = originalCGImage else { return }
+
+        let w = cgImage.width
+        let h = cgImage.height
+        let bpc = 8
+        let bpp = 4
+        let bpr = w * bpp
+        var pixels = [UInt8](repeating: 0, count: h * bpr)
+
+        guard let ctx = CGContext(
+            data: &pixels,
+            width: w, height: h,
+            bitsPerComponent: bpc,
+            bytesPerRow: bpr,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return }
+
+        ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        // Sample background color from corners (average of 4 corners)
+        func pixelAt(_ x: Int, _ y: Int) -> (r: Float, g: Float, b: Float) {
+            let i = y * bpr + x * bpp
+            return (Float(pixels[i]), Float(pixels[i+1]), Float(pixels[i+2]))
+        }
+        let corners = [pixelAt(0,0), pixelAt(w-1,0), pixelAt(0,h-1), pixelAt(w-1,h-1)]
+        let bgR = corners.map(\.r).reduce(0,+) / 4
+        let bgG = corners.map(\.g).reduce(0,+) / 4
+        let bgB = corners.map(\.b).reduce(0,+) / 4
+
+        let thresh = Float(tolerance) * 2.55   // 0–100 → 0–255
+
+        for y in 0..<h {
+            for x in 0..<w {
+                let i = y * bpr + x * bpp
+                let r = Float(pixels[i])
+                let g = Float(pixels[i+1])
+                let b = Float(pixels[i+2])
+
+                let dist = sqrt((r-bgR)*(r-bgR) + (g-bgG)*(g-bgG) + (b-bgB)*(b-bgB))
+                if dist <= thresh {
+                    pixels[i]   = 0
+                    pixels[i+1] = 0
+                    pixels[i+2] = 0
+                    pixels[i+3] = 0   // transparent
+                }
+            }
+        }
+
+        guard let outCtx = CGContext(
+            data: &pixels,
+            width: w, height: h,
+            bitsPerComponent: bpc,
+            bytesPerRow: bpr,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let outCG = outCtx.makeImage() else { return }
+
+        let result = NSImage(cgImage: outCG, size: originalNSSize)
+        DispatchQueue.main.async {
+            self.resultImage = result
+            self.showOriginal = false
+            self.isProcessing = false
+        }
+    }
+
+    // MARK: - Vision AI
+    private func removeByVision() {
+        guard let cgImage = originalCGImage else { return }
+
+        if #available(macOS 14.0, *) {
+            let request = VNGenerateForegroundInstanceMaskRequest()
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            do {
+                try handler.perform([request])
+                guard let result = request.results?.first else {
+                    DispatchQueue.main.async {
+                        self.errorMessage = "No subject detected"
+                        self.isProcessing = false
+                    }
+                    return
+                }
+                let maskBuffer = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+                let maskCI = CIImage(cvPixelBuffer: maskBuffer)
+                let origCI = CIImage(cgImage: cgImage)
+                let blend = CIFilter.blendWithMask()
+                blend.inputImage = origCI
+                blend.backgroundImage = CIImage.empty()
+                blend.maskImage = maskCI
+                guard let out = blend.outputImage,
+                      let outCG = ciContext.createCGImage(out, from: origCI.extent) else { return }
+                let result2 = NSImage(cgImage: outCG, size: originalNSSize)
                 DispatchQueue.main.async {
-                    self.errorMessage = "Failed to render"
+                    self.resultImage = result2
+                    self.showOriginal = false
                     self.isProcessing = false
                 }
-                return
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Vision error: \(error.localizedDescription)"
+                    self.isProcessing = false
+                }
             }
-            
-            let nsImage = NSImage(cgImage: outputCG, size: originalSize)
-            
+        } else {
             DispatchQueue.main.async {
-                self.resultImage = nsImage
-                self.showOriginal = false
-                self.isProcessing = false
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Error: \(error.localizedDescription)"
+                self.errorMessage = "Vision AI requires macOS 14+"
                 self.isProcessing = false
             }
         }
     }
-    
-    // MARK: - Copy Result to Clipboard
+
+    // MARK: - Copy / Save
     func copyResultToClipboard() {
         guard let image = resultImage else { return }
-        
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        
-        // Write as PNG with transparency
-        if let tiffData = image.tiffRepresentation,
-           let bitmap = NSBitmapImageRep(data: tiffData),
-           let pngData = bitmap.representation(using: .png, properties: [:]) {
-            pasteboard.setData(pngData, forType: .png)
-            // Also write as tiff for broader compatibility
-            pasteboard.setData(tiffData, forType: .tiff)
+        if let tiff = image.tiffRepresentation,
+           let bmp = NSBitmapImageRep(data: tiff),
+           let png = bmp.representation(using: .png, properties: [:]) {
+            pasteboard.setData(png, forType: .png)
+            pasteboard.setData(tiff, forType: .tiff)
         }
     }
-    
-    // MARK: - Save Result
+
     func saveResult() {
         guard let image = resultImage else { return }
-        
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
         panel.nameFieldStringValue = "removed-bg.png"
         panel.canCreateDirectories = true
-        
         if panel.runModal() == .OK, let url = panel.url {
-            if let tiffData = image.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                try? pngData.write(to: url)
+            if let tiff = image.tiffRepresentation,
+               let bmp = NSBitmapImageRep(data: tiff),
+               let png = bmp.representation(using: .png, properties: [:]) {
+                try? png.write(to: url)
             }
         }
     }

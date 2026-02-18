@@ -130,9 +130,10 @@ struct MainView: View {
                 BGRemoverView()
             case .worldClocks:
                 WorldClocksView()
+                Spacer(minLength: 0)
             }
         }
-        .frame(width: tool.popoverSize.width, height: tool.popoverSize.height)
+        .frame(width: tool.popoverSize.width, height: tool.popoverSize.height, alignment: .top)
     }
 }
 
@@ -313,7 +314,7 @@ struct WorldClocksPreview: View {
 struct BGRemoverPreview: View {
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "person.crop.rectangle.badge.minus")
+            Image(systemName: "rectangle.dashed")
                 .font(.system(size: 28, weight: .ultraLight))
                 .foregroundColor(.primary.opacity(0.35))
             Text("Drop or paste image")
